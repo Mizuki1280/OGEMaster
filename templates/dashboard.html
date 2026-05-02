@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-card">
+        <h2>Личный кабинет</h2>
+        <p>Добро пожаловать, <strong>{{ user.username }}</strong>!</p>
+
+        <div class="stats">
+            <div class="stat-item">
+                <h3>Всего задач</h3>
+                <p class="stat-number">{{ user.total_tasks }}</p>
+            </div>
+            <div class="stat-item">
+                <h3>Выполнено задач</h3>
+                <p class="stat-number">{{ user.completed_tasks }}</p>
+            </div>
+            <div class="stat-item">
+                <h3>Процент выполнения</h3>
+                <p class="stat-number">
+                    {% if user.total_tasks > 0 %}
+                        {{ (user.completed_tasks / user.total_tasks * 100) | round(1) }}%
+                    {% else %}
+                        0%
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <a href="/" class="btn btn-login">Начать соревнование</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.body.classList.add('dashboard-page');
+</script>
+{% endblock %}
