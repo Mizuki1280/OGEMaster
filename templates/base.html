@@ -9,20 +9,25 @@
     <title>OGEMasters - Соревнование по ОГЭ</title>
 </head>
 <body class="dark-theme">
+    <div class="theme-switcher">
+        <button onclick="toggleTheme()" class="theme-btn">
+            <span>🌙</span>
+        </button>
+    </div>
+
+    {% if user %}
     <div class="top-bar">
+        <div class="nav-buttons">
+            <a href="/profile" class="nav-btn">Профиль</a>
+            <a href="/rating" class="nav-btn">Рейтинг</a>
+        </div>
         <div class="right-controls">
-            <div class="theme-switcher">
-                <button onclick="toggleTheme()" class="theme-btn">
-                    <span>🌙</span>
-                </button>
-            </div>
-            {% if user %}
             <div class="user-info">
-                <span class="username">{{ user.username }}</span>
+                <span>{{ user.username }}</span>
             </div>
-            {% endif %}
         </div>
     </div>
+    {% endif %}
 
     {% block content %}
     {% endblock %}
