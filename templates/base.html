@@ -3,28 +3,33 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet"
-          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <title>OGEMasters - Соревнование по ОГЭ</title>
 </head>
-<body class="dark-theme">
+<body class="{{ theme }}-theme {% if user %}logged-in{% endif %}">
     <div class="theme-switcher">
-        <button onclick="toggleTheme()" class="theme-btn">
-            <span>🌙</span>
-        </button>
+        {% if theme == 'dark' %}
+            <a href="/set_theme/light" class="theme-btn">☀️</a>
+        {% else %}
+            <a href="/set_theme/dark" class="theme-btn">🌙</a>
+        {% endif %}
     </div>
 
     {% if user %}
     <div class="top-bar">
         <div class="nav-buttons">
-            <a href="/profile" class="nav-btn">Профиль</a>
+            <a href="/profile/{{ user.id }}" class="nav-btn">Профиль</a>
             <a href="/rating" class="nav-btn">Рейтинг</a>
+        </div>
+        <div class="nav-center">
+            <a href="/dashboard/{{ user.id }}" class="nav-btn-center">Главная</a>
         </div>
         <div class="right-controls">
             <div class="user-info">
                 <span>{{ user.username }}</span>
             </div>
+            <a href="/logout" class="logout-btn">Выйти</a>
         </div>
     </div>
     {% endif %}
@@ -32,9 +37,13 @@
     {% block content %}
     {% endblock %}
 
-    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
-    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    {% if bg_image %}
+    <style>
+        body {
+            background: url('{{ bg_image }}') no-repeat center center fixed !important;
+            background-size: cover !important;
+        }
+    </style>
+    {% endif %}
 </body>
 </html>
