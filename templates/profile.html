@@ -6,31 +6,37 @@
         <div class="profile-header">
             <h2 class="profile-title">Профиль</h2>
         </div>
-
         {% if error %}
             <div class="alert alert-danger">{{ error }}</div>
         {% endif %}
-
         <div class="profile-field">
             <label>Никнейм:</label>
             <div class="field-value">{{ user.username }}</div>
         </div>
-
         <div class="profile-field">
             <label>Имя:</label>
             <div class="field-value">{{ user.name or 'Не указано' }}</div>
         </div>
-
         <div class="profile-field">
             <label>Email:</label>
             <div class="field-value">{{ user.email }}</div>
         </div>
-
         <div class="profile-field">
             <label>Пароль:</label>
             <div class="field-value">••••••••</div>
         </div>
-
+        <div class="profile-field">
+            <label>Всего задач:</label>
+            <div class="field-value">{{ total }}</div>
+        </div>
+        <div class="profile-field">
+            <label>Правильных ответов:</label>
+            <div class="field-value">{{ correct }}</div>
+        </div>
+        <div class="profile-field">
+            <label>Процент правильных:</label>
+            <div class="field-value">{{ percent }}{% if percent != '-' %}%{% endif %}</div>
+        </div>
         <div class="profile-actions-row">
             <button onclick="showEditData()" class="btn-action">Сменить данные</button>
             <button onclick="showChangePassword()" class="btn-action">Сменить пароль</button>
@@ -72,14 +78,8 @@
     <h3>Настройки фона</h3>
     <form method="post" action="/set_background/{{ user.id }}" enctype="multipart/form-data">
         <div class="bg-options">
-            <label>
-                <input type="radio" name="bg_type" value="default" {% if not bg_image %}checked{% endif %}>
-                Стандартный фон
-            </label>
-            <label>
-                <input type="radio" name="bg_type" value="custom" {% if bg_image %}checked{% endif %}>
-                Свой фон
-            </label>
+            <label><input type="radio" name="bg_type" value="default" {% if not bg_image %}checked{% endif %}> Стандартный фон</label>
+            <label><input type="radio" name="bg_type" value="custom" {% if bg_image %}checked{% endif %}> Свой фон</label>
         </div>
         <div id="customBgInput" style="display: {% if bg_image %}block{% else %}none{% endif %};">
             <input type="file" name="background_image" accept="image/*">
@@ -97,14 +97,9 @@
     function hideChangePassword() { document.getElementById('changePasswordForm').style.display = 'none'; }
     function showBackgroundSettings() { document.getElementById('backgroundSettings').style.display = 'block'; }
     function hideBackgroundSettings() { document.getElementById('backgroundSettings').style.display = 'none'; }
-
     document.querySelectorAll('input[name="bg_type"]').forEach(radio => {
         radio.addEventListener('change', function() {
-            if (this.value === 'custom') {
-                document.getElementById('customBgInput').style.display = 'block';
-            } else {
-                document.getElementById('customBgInput').style.display = 'none';
-            }
+            document.getElementById('customBgInput').style.display = this.value === 'custom' ? 'block' : 'none';
         });
     });
 </script>

@@ -1,15 +1,13 @@
-{% extends "base.html" %}
+{% extends "base_clean.html" %}
 
 {% block content %}
 <div class="login-container">
-    <h1 class="site-title">OGEMaster</h1>
+    <h1 class="site-title">ITMaster</h1>
     <div class="glass-card">
         <p class="text-center subtitle">Регистрация</p>
-
         {% if error %}
             <div class="alert alert-danger">{{ error }}</div>
         {% endif %}
-
         <form method="post">
             <div class="form-group">
                 <input type="text" class="form-control" name="username" placeholder="Логин" required>
@@ -25,7 +23,6 @@
             </div>
             <button type="submit" class="btn btn-login btn-block">Зарегистрироваться</button>
         </form>
-
         <div class="text-center mt-3">
             <a href="/login" class="register-link">Уже есть аккаунт? Войти</a>
         </div>

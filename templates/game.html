@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="dashboard-full">
+    <div class="game-container">
+        <div class="game-header">
+            <h2 class="game-title">Задание по информатике</h2>
+            <div class="game-stats">
+                <div>Всего заданий: {{ total_questions }}</div>
+                <div>Время: <span id="timer">00:00</span></div>
+            </div>
+        </div>
+        {% if message %}
+            <div class="alert alert-{{ message_type }}">{{ message }}</div>
+        {% endif %}
+        <div class="question-card">
+            <div class="question-text">{{ question.text|replace('\n', '<br>')|safe }}</div>
+            <div class="answer-input">
+                <input type="text" id="answerInput" placeholder="Введите ответ" autocomplete="off" onkeypress="if(event.keyCode==13) checkAnswer()">
+            </div>
+            <div class="button-group">
+                <button onclick="checkAnswer()" class="btn-submit">Ответить</button>
+                <button onclick="skipQuestion()" class="btn-skip">Пропустить</button>
+                <button onclick="endGame()" class="btn-stop">Завершить</button>
+            </div>
+            <div class="question-hint"><small>Подсказка: ответ должен быть числом или словом</small></div>
+        </div>
+    </div>
+</div>
+
+<div id="breakModal" class="modal">
+    <div class="modal-content">
+        <h3>Время сделать перерыв для глаз!</h3>
+        <p>Отдохните 5 минут</p>
+        <p>Осталось: <span id="breakTimer">05:00</span></p>
+        <button onclick="skipBreak()" class="btn-skip">Пропустить</button>
+    </div>
+</div>
+
+<script>
+    let elapsedSeconds = {{ elapsed }};
+    let breakShown = false;
+    let breakRemaining = 300;
+    let breakInterval = null;
+    let breakCountdown = false;
+
+    function formatTime(seconds) {
+        let minutes = Math.floor(seconds / 60);
+        let secs = seconds % 60;
+        return String(minutes).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+    }
+
+    function updateTimer() {
+        elapsedSeconds++;
+        document.getElementById('timer').innerText = formatTime(elapsedSeconds);
+
+        if (elapsedSeconds % 1200 === 0 && elapsedSeconds > 0 && !breakShown) {
+            showBreakModal();
+        }
+    }
+
+    function showBreakModal() {
+        breakShown = true;
+        breakRemaining = 300;
+        document.getElementById('breakTimer').innerText = '05:00';
+        document.getElementById('breakModal').style.display = 'flex';
+        if (breakInterval) clearInterval(breakInterval);
+        breakInterval = setInterval(updateBreakTimer, 1000);
+    }
+
+    function updateBreakTimer() {
+        if (breakRemaining <= 0) {
+            clearInterval(breakInterval);
+            document.getElementById('breakModal').style.display = 'none';
+            breakCountdown = false;
+            breakShown = false;
+        } else {
+            breakRemaining--;
+            let minutes = Math.floor(breakRemaining / 60);
+            let seconds = breakRemaining % 60;
+            document.getElementById('breakTimer').innerText = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+        }
+    }
+
+    function skipBreak() {
+        clearInterval(breakInterval);
+        document.getElementById('breakModal').style.display = 'none';
+        breakCountdown = false;
+        breakShown = false;
+    }
+
+    function checkAnswer() {
+        let form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/check_answer/{{ user.id }}';
+        let answerField = document.createElement('input');
+        answerField.type = 'hidden';
+        answerField.name = 'answer';
+        answerField.value = document.getElementById('answerInput').value;
+        let correctField = document.createElement('input');
+        correctField.type = 'hidden';
+        correctField.name = 'correct_answer';
+        correctField.value = '{{ question.answer }}';
+        form.appendChild(answerField);
+        form.appendChild(correctField);
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    function skipQuestion() {
+        let form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/skip_question/{{ user.id }}';
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    function endGame() {
+        if (confirm('Завершить игру и посмотреть статистику?')) {
+            let form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/end_game/{{ user.id }}';
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+
+    setInterval(updateTimer, 1000);
+</script>
+
+<style>
+.game-stats{display:flex;gap:20px;justify-content:center;margin-bottom:20px;flex-wrap:wrap;color:#fff;}
+.button-group{display:flex;gap:15px;justify-content:center;margin-top:20px;}
+.btn-submit,.btn-skip,.btn-stop{padding:12px 25px;border-radius:25px;font-size:16px;font-weight:bold;cursor:pointer;border:none;transition:transform 0.2s;}
+.btn-submit{background:linear-gradient(135deg,#00a8ff,#0077ff);color:white;}
+.btn-skip{background:linear-gradient(135deg,#ffc107,#e0a800);color:white;}
+.btn-stop{background:linear-gradient(135deg,#dc3545,#c82333);color:white;}
+.btn-submit:hover,.btn-skip:hover,.btn-stop:hover{transform:translateY(-2px);opacity:0.9;}
+.question-text{white-space:pre-line;background:#f4f4f4;padding:15px;border-radius:10px;margin-bottom:20px;}
+body.dark-theme .question-text{background:#2d2d2d;color:#fff;}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:10000;justify-content:center;align-items:center;}
+.modal-content{background:white;padding:30px;border-radius:15px;text-align:center;max-width:400px;}
+body.dark-theme .modal-content{background:#2d2d2d;color:white;}
+</style>
+{% endblock %}

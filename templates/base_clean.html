@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>ITMaster</title>
+</head>
+<body class="{{ theme }}-theme">
+    <div class="theme-switcher">
+        {% if theme == 'dark' %}
+            <a href="/set_theme/light" class="theme-btn">☀️</a>
+        {% else %}
+            <a href="/set_theme/dark" class="theme-btn">🌙</a>
+        {% endif %}
+    </div>
+    {% block content %}{% endblock %}
+</body>
+</html>

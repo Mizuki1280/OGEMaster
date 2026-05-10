@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="dashboard-full">
+    <div class="game-container" style="text-align:center;">
+        <h2>Игра завершена</h2>
+        <div class="summary-stats" style="margin:30px 0;font-size:18px;color:#fff;">
+            <p>Решено задач: {{ stats.solved }}</p>
+            <p>Пропущено задач: {{ stats.skipped }}</p>
+            <p>Не решено задач: {{ stats.unsolved }}</p>
+            <p>Всего заданий: {{ total }}</p>
+            <p>Время: {{ minutes }} мин {{ seconds }} сек</p>
+        </div>
+        <a href="/dashboard/{{ user.id }}" class="btn-submit">Вернуться на главную</a>
+    </div>
+</div>
+<style>
+.summary-stats p{margin:10px 0;}
+.btn-submit{background:linear-gradient(135deg,#00a8ff,#0077ff);color:white;padding:12px 30px;border-radius:25px;text-decoration:none;display:inline-block;}
+body.dark-theme .summary-stats{color:#fff;}
+body.light-theme .summary-stats{color:#333;}
+</style>
+{% endblock %}

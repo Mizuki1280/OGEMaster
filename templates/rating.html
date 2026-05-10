@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-full">
+    <div class="dashboard-header">
+        <h2 class="welcome-title">Рейтинг игроков</h2>
+    </div>
+    <div class="rating-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>Место</th>
+                    <th>Игрок</th>
+                    <th>Выполнено задач</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr {% if user and u.id == user.id %}class="current-user"{% endif %}>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ u.username }}</td>
+                    <td>{{ u.completed_tasks }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+.rating-table {
+    width: 100%;
+    max-width: 600px;
+    margin: 20px auto;
+}
+
+.rating-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.rating-table th, .rating-table td {
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+body.light-theme .rating-table th,
+body.light-theme .rating-table td {
+    border-bottom-color: rgba(0,0,0,0.1);
+}
+
+.current-user {
+    background: rgba(0,168,255,0.2);
+    font-weight: bold;
+}
+</style>
+{% endblock %}
