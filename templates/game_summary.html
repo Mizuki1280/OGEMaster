@@ -8,6 +8,13 @@
             <p>Пропущено задач: {{ stats.skipped }}</p>
             <p>Не решено задач: {{ stats.unsolved }}</p>
             <p>Всего заданий: {{ total }}</p>
+            <p>Процент правильных:
+                {% if total > 0 %}
+                    {{ "%.2f"|format(stats.solved * 100 / total) }}%
+                {% else %}
+                    0%
+                {% endif %}
+            </p>
             <p>Время: {{ minutes }} мин {{ seconds }} сек</p>
         </div>
         <a href="/dashboard/{{ user.id }}" class="btn-submit">Вернуться на главную</a>

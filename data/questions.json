@@ -93,9 +93,9 @@
     {
         "id": 11,
         "type": "calc",
-        "text": "Сколько чётных натуральных чисел от 1 до {max_num}, кратных {divider}?",
+        "text": "Сколько натуральных чисел от 1 до {max_num}, кратных {divider}?",
         "params": {"max_num": [50, 300], "divider": [2, 8]},
-        "formula": "max_num // (2 * divider)"
+        "formula": "max_num // divider"
     },
     {
         "id": 12,

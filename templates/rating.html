@@ -1,58 +1,373 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="dashboard-full">
-    <div class="dashboard-header">
-        <h2 class="welcome-title">Рейтинг игроков</h2>
-    </div>
-    <div class="rating-table">
-        <table>
-            <thead>
-                <tr>
-                    <th>Место</th>
-                    <th>Игрок</th>
-                    <th>Выполнено задач</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for u in users %}
-                <tr {% if user and u.id == user.id %}class="current-user"{% endif %}>
-                    <td>{{ loop.index }}</td>
-                    <td>{{ u.username }}</td>
-                    <td>{{ u.completed_tasks }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<div class="rating-full">
+    <div class="rating-container">
+        <div class="rating-header">
+            <h2 class="rating-title">Рейтинг игроков</h2>
+            <div class="rating-buttons">
+                <button onclick="sortByTotal()" class="rating-btn active" id="btnTotal">По количеству задач</button>
+                <button onclick="sortByCorrect()" class="rating-btn" id="btnCorrect">По правильным ответам</button>
+            </div>
+        </div>
+
+        <div class="rating-table-wrapper">
+            <table class="rating-table">
+                <thead>
+                    <tr>
+                        <th>Место</th>
+                        <th>Никнейм</th>
+                        <th>Всего задач</th>
+                        <th>Правильных ответов</th>
+                        <th>Процент</th>
+                    </tr>
+                </thead>
+                <tbody id="ratingBody"></tbody>
+                <tbody id="currentUserRow" style="display: none;">
+                    <tr class="separator-row">
+                        <td colspan="5" class="separator-cell">...</td>
+                    </tr>
+                    <tr class="current-user-row" id="currentUserTr">
+                        <td class="rank-cell" id="currentRank"></td>
+                        <td class="username-cell" id="currentUsername"></td>
+                        <td class="total-cell" id="currentTotal"></td>
+                        <td class="correct-cell" id="currentCorrect"></td>
+                        <td class="percent-cell" id="currentPercent"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="rating-footer">
+            <p>Показаны 10 лучших игроков</p>
+        </div>
     </div>
 </div>
 
+<script>
+    let usersData = {{ users|tojson }};
+    let currentUser = {{ user|tojson if user else 'null' }};
+    let currentSort = 'total';
+
+    function sortByTotal() {
+        currentSort = 'total';
+        document.getElementById('btnTotal').classList.add('active');
+        document.getElementById('btnCorrect').classList.remove('active');
+
+        let sorted = [...usersData];
+        sorted.sort((a, b) => (b.total_tasks || 0) - (a.total_tasks || 0));
+        updateTable(sorted.slice(0, 10), sorted);
+        highlightColumn('total');
+    }
+
+    function sortByCorrect() {
+        currentSort = 'correct';
+        document.getElementById('btnTotal').classList.remove('active');
+        document.getElementById('btnCorrect').classList.add('active');
+
+        let sorted = [...usersData];
+        sorted.sort((a, b) => (b.correct_tasks || 0) - (a.correct_tasks || 0));
+        updateTable(sorted.slice(0, 10), sorted);
+        highlightColumn('correct');
+    }
+
+    function updateTable(topUsers, allSortedUsers) {
+        let tbody = document.getElementById('ratingBody');
+        tbody.innerHTML = '';
+
+        for (let i = 0; i < topUsers.length; i++) {
+            let row = tbody.insertRow();
+            let user = topUsers[i];
+
+            let rankCell = row.insertCell(0);
+            rankCell.textContent = i + 1;
+            rankCell.className = 'rank-cell';
+
+            let usernameCell = row.insertCell(1);
+            usernameCell.textContent = user.username;
+            usernameCell.className = 'username-cell';
+            if (user.id === 1) {
+                usernameCell.classList.add('admin-username');
+            }
+
+            let totalCell = row.insertCell(2);
+            totalCell.textContent = user.total_tasks || 0;
+            totalCell.className = 'total-cell';
+
+            let correctCell = row.insertCell(3);
+            correctCell.textContent = user.correct_tasks || 0;
+            correctCell.className = 'correct-cell';
+
+            let percentCell = row.insertCell(4);
+            if (user.total_tasks > 0) {
+                let percent = (user.correct_tasks || 0) * 100 / user.total_tasks;
+                percentCell.textContent = percent.toFixed(2) + '%';
+            } else {
+                percentCell.textContent = '—';
+            }
+            percentCell.className = 'percent-cell';
+
+            if (currentUser && user.id === currentUser.id) {
+                row.classList.add('current-user-in-top');
+            }
+        }
+
+        showCurrentUserIfNeeded(allSortedUsers);
+    }
+
+    function showCurrentUserIfNeeded(sortedUsers) {
+        let currentUserRow = document.getElementById('currentUserRow');
+
+        if (!currentUser) {
+            currentUserRow.style.display = 'none';
+            return;
+        }
+
+        let userRank = -1;
+        for (let i = 0; i < sortedUsers.length; i++) {
+            if (sortedUsers[i].id === currentUser.id) {
+                userRank = i + 1;
+                break;
+            }
+        }
+
+        let userInTop10 = userRank <= 10;
+
+        if (userInTop10) {
+            currentUserRow.style.display = 'none';
+            return;
+        }
+
+        currentUserRow.style.display = 'table-row-group';
+
+        document.getElementById('currentRank').textContent = userRank;
+
+        let usernameCell = document.getElementById('currentUsername');
+        usernameCell.textContent = currentUser.username;
+        if (currentUser.id === 1) {
+            usernameCell.classList.add('admin-username');
+        }
+
+        document.getElementById('currentTotal').textContent = currentUser.total_tasks || 0;
+        document.getElementById('currentCorrect').textContent = currentUser.correct_tasks || 0;
+
+        let percentCell = document.getElementById('currentPercent');
+        if (currentUser.total_tasks > 0) {
+            let percent = (currentUser.correct_tasks || 0) * 100 / currentUser.total_tasks;
+            percentCell.textContent = percent.toFixed(2) + '%';
+        } else {
+            percentCell.textContent = '—';
+        }
+    }
+
+    function highlightColumn(sortType) {
+        let rows = document.getElementById('ratingBody').rows;
+        for (let i = 0; i < rows.length; i++) {
+            let totalCell = rows[i].cells[2];
+            let correctCell = rows[i].cells[3];
+
+            if (sortType === 'total') {
+                totalCell.style.background = 'rgba(0, 168, 255, 0.25)';
+                correctCell.style.background = '';
+            } else {
+                totalCell.style.background = '';
+                correctCell.style.background = 'rgba(0, 168, 255, 0.25)';
+            }
+        }
+
+        let currentRow = document.getElementById('currentUserRow');
+        if (currentRow.style.display === 'table-row-group') {
+            if (sortType === 'total') {
+                document.getElementById('currentTotal').style.background = 'rgba(0, 168, 255, 0.25)';
+                document.getElementById('currentCorrect').style.background = '';
+            } else {
+                document.getElementById('currentTotal').style.background = '';
+                document.getElementById('currentCorrect').style.background = 'rgba(0, 168, 255, 0.25)';
+            }
+        }
+    }
+
+    sortByTotal();
+</script>
+
 <style>
+.rating-full {
+    width: 80%;
+    margin: 0 auto;
+    min-height: 100vh;
+    padding: 110px 40px 40px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.rating-container {
+    width: 100%;
+    max-width: 1000px;
+    background: rgba(0, 0, 0, 0.85);
+    border-radius: 20px;
+    padding: 30px;
+}
+
+body.light-theme .rating-container {
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.rating-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.rating-title {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+body.dark-theme .rating-title {
+    color: #fff;
+}
+
+body.light-theme .rating-title {
+    color: #333;
+}
+
+.rating-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.rating-btn {
+    padding: 10px 25px;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+.rating-btn.active {
+    background: linear-gradient(135deg, #00a8ff, #0077ff);
+    color: white;
+}
+
+body.light-theme .rating-btn {
+    background: rgba(0, 0, 0, 0.1);
+    color: #333;
+}
+
+body.light-theme .rating-btn.active {
+    background: linear-gradient(135deg, #00a8ff, #0077ff);
+    color: white;
+}
+
+.rating-table-wrapper {
+    overflow-x: auto;
+    margin-bottom: 20px;
+}
+
 .rating-table {
     width: 100%;
-    max-width: 600px;
-    margin: 20px auto;
-}
-
-.rating-table table {
-    width: 100%;
     border-collapse: collapse;
+    font-size: 16px;
 }
 
-.rating-table th, .rating-table td {
-    padding: 12px;
-    text-align: center;
-    border-bottom: 1px solid rgba(255,255,255,0.2);
-}
-
-body.light-theme .rating-table th,
-body.light-theme .rating-table td {
-    border-bottom-color: rgba(0,0,0,0.1);
-}
-
-.current-user {
-    background: rgba(0,168,255,0.2);
+.rating-table th {
+    padding: 12px 15px;
+    text-align: left;
     font-weight: bold;
+    border-bottom: 2px solid;
+}
+
+body.dark-theme .rating-table th {
+    color: #fff;
+    border-bottom-color: #00a8ff;
+}
+
+body.light-theme .rating-table th {
+    color: #333;
+    border-bottom-color: #0077ff;
+}
+
+.rating-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid;
+}
+
+body.dark-theme .rating-table td {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+    color: #ddd;
+}
+
+body.light-theme .rating-table td {
+    border-bottom-color: rgba(0, 0, 0, 0.1);
+    color: #555;
+}
+
+.rank-cell {
+    font-weight: bold;
+    width: 80px;
+}
+
+body.dark-theme .rank-cell {
+    color: #00a8ff;
+}
+
+body.light-theme .rank-cell {
+    color: #0077ff;
+}
+
+.username-cell {
+    font-weight: 500;
+}
+
+.admin-username {
+    color: #ff4444 !important;
+    font-weight: bold;
+}
+
+body.dark-theme .admin-username {
+    color: #ff6666 !important;
+}
+
+.separator-cell {
+    text-align: center;
+    color: #888;
+    font-size: 14px;
+    padding: 5px;
+}
+
+.current-user-row {
+    background: rgba(0, 168, 255, 0.25);
+}
+
+.current-user-in-top {
+    background: rgba(0, 168, 255, 0.25);
+}
+
+body.dark-theme .current-user-row {
+    background: rgba(0, 168, 255, 0.2);
+}
+
+body.dark-theme .current-user-in-top {
+    background: rgba(0, 168, 255, 0.2);
+}
+
+.rating-footer {
+    text-align: center;
+    padding-top: 20px;
+    font-size: 14px;
+}
+
+body.dark-theme .rating-footer {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+body.light-theme .rating-footer {
+    color: rgba(0, 0, 0, 0.6);
 }
 </style>
 {% endblock %}

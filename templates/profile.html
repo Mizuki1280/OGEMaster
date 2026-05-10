@@ -35,7 +35,13 @@
         </div>
         <div class="profile-field">
             <label>Процент правильных:</label>
-            <div class="field-value">{{ percent }}{% if percent != '-' %}%{% endif %}</div>
+            <div class="field-value">
+                {% if total > 0 %}
+                    {{ "%.2f"|format(correct * 100 / total) }}%
+                {% else %}
+                    —
+                {% endif %}
+            </div>
         </div>
         <div class="profile-actions-row">
             <button onclick="showEditData()" class="btn-action">Сменить данные</button>

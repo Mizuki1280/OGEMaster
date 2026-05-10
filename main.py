@@ -18,7 +18,7 @@ question_gen = QuestionGenerator()
 @app.route('/set_theme/<theme>')
 def set_theme(theme):
     resp = make_response(redirect(request.referrer or '/'))
-    resp.set_cookie('theme', theme, max_age=365*24*60*60)
+    resp.set_cookie('theme', theme, max_age=365 * 24 * 60 * 60)
     return resp
 
 
@@ -41,7 +41,7 @@ def login():
         user = db_sess.query(User).filter(User.username == username).first()
         if user and user.password == password:
             resp = make_response(redirect(url_for('dashboard', user_id=user.id)))
-            resp.set_cookie('user_id', str(user.id), max_age=365*24*60*60)
+            resp.set_cookie('user_id', str(user.id), max_age=365 * 24 * 60 * 60)
             return resp
         else:
             return render_template('login.html', error="Неверный логин или пароль", theme=theme)
@@ -96,8 +96,12 @@ def profile(user_id):
         return redirect(url_for('login'))
     total = user.total_tasks or 0
     correct = user.correct_tasks or 0
-    percent = (correct * 100 // total) if total > 0 else "-"
-    return render_template('profile.html', user=user, theme=theme, total=total, correct=correct, percent=percent, bg_image=user.background_image)
+    if total > 0:
+        percent = "{:.2f}".format(correct * 100 / total)
+    else:
+        percent = "-"
+    return render_template('profile.html', user=user, theme=theme, total=total, correct=correct, percent=percent,
+                           bg_image=user.background_image)
 
 
 @app.route('/edit_profile/<int:user_id>', methods=['POST'])
@@ -168,11 +172,30 @@ def rating():
     theme = get_theme()
     user_id = request.cookies.get('user_id')
     db_sess = db_session.create_session()
-    users = db_sess.query(User).order_by(User.correct_tasks.desc()).all()
-    user = None
+
+    users = db_sess.query(User).all()
+
+    users_data = []
+    for user in users:
+        users_data.append({
+            'id': user.id,
+            'username': user.username,
+            'total_tasks': user.total_tasks or 0,
+            'correct_tasks': user.correct_tasks or 0
+        })
+
+    current_user_data = None
     if user_id:
         user = db_sess.get(User, int(user_id))
-    return render_template('rating.html', users=users, user=user, theme=theme, bg_image=user.background_image if user else None)
+        if user:
+            current_user_data = {
+                'id': user.id,
+                'username': user.username,
+                'total_tasks': user.total_tasks or 0,
+                'correct_tasks': user.correct_tasks or 0
+            }
+
+    return render_template('rating.html', users=users_data, user=current_user_data, theme=theme)
 
 
 @app.route('/start_game/<int:user_id>')
@@ -202,7 +225,8 @@ def game(user_id):
     question = session['current_question']
     elapsed = int(time.time() - session['game_stats']['start_time'])
     total_questions = session['game_stats']['total_questions']
-    return render_template('game.html', user=user, theme=theme, question=question, stats=session['game_stats'], total_questions=total_questions, elapsed=elapsed, bg_image=user.background_image)
+    return render_template('game.html', user=user, theme=theme, question=question, stats=session['game_stats'],
+                           total_questions=total_questions, elapsed=elapsed, bg_image=user.background_image)
 
 
 @app.route('/check_answer/<int:user_id>', methods=['POST'])
@@ -231,7 +255,9 @@ def check_answer(user_id):
     session.pop('current_question', None)
     session['current_question'] = question_gen.generate_question()
     elapsed = int(time.time() - session['game_stats']['start_time'])
-    return render_template('game.html', user=user, theme=theme, question=session['current_question'], stats=session['game_stats'], total_questions=total_questions, elapsed=elapsed, message=message, message_type=message_type, bg_image=user.background_image)
+    return render_template('game.html', user=user, theme=theme, question=session['current_question'],
+                           stats=session['game_stats'], total_questions=total_questions, elapsed=elapsed,
+                           message=message, message_type=message_type, bg_image=user.background_image)
 
 
 @app.route('/skip_question/<int:user_id>', methods=['POST'])
@@ -249,7 +275,9 @@ def skip_question(user_id):
     session.pop('current_question', None)
     session['current_question'] = question_gen.generate_question()
     elapsed = int(time.time() - session['game_stats']['start_time'])
-    return render_template('game.html', user=user, theme=theme, question=session['current_question'], stats=session['game_stats'], total_questions=total_questions, elapsed=elapsed, message="Задание пропущено", message_type="warning", bg_image=user.background_image)
+    return render_template('game.html', user=user, theme=theme, question=session['current_question'],
+                           stats=session['game_stats'], total_questions=total_questions, elapsed=elapsed,
+                           message="Задание пропущено", message_type="warning", bg_image=user.background_image)
 
 
 @app.route('/end_game/<int:user_id>', methods=['POST'])
@@ -265,7 +293,8 @@ def end_game(user_id):
     elapsed = int(time.time() - stats['start_time'])
     minutes = elapsed // 60
     seconds = elapsed % 60
-    return render_template('game_summary.html', user=user, stats=stats, total=total, elapsed=elapsed, minutes=minutes, seconds=seconds, theme=theme)
+    return render_template('game_summary.html', user=user, stats=stats, total=total, elapsed=elapsed, minutes=minutes,
+                           seconds=seconds, theme=theme)
 
 
 @app.route('/logout')
