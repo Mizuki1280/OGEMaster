@@ -1,6 +1,6 @@
 import time
 import os
-from flask import Flask, render_template, request, redirect, url_for, make_response, session
+from flask import Flask, render_template, request, redirect, url_for, make_response, session, jsonify
 from data import db_session
 from data.users import User
 from data.questions import QuestionGenerator
@@ -14,18 +14,22 @@ os.makedirs(USER_BG_FOLDER, exist_ok=True)
 
 question_gen = QuestionGenerator()
 
+
 @app.route('/set_theme/<theme>')
 def set_theme(theme):
     resp = make_response(redirect(request.referrer or '/'))
     resp.set_cookie('theme', theme, max_age=365 * 24 * 60 * 60)
     return resp
 
+
 def get_theme():
     return request.cookies.get('theme', 'dark')
+
 
 @app.route('/')
 def index():
     return redirect(url_for('login'))
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -42,6 +46,7 @@ def login():
         else:
             return render_template('login.html', error="Неверный логин или пароль", theme=theme)
     return render_template('login.html', theme=theme)
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -71,6 +76,7 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html', theme=theme)
 
+
 @app.route('/dashboard/<int:user_id>')
 def dashboard(user_id):
     theme = get_theme()
@@ -79,6 +85,7 @@ def dashboard(user_id):
     if not user:
         return redirect(url_for('login'))
     return render_template('dashboard.html', user=user, theme=theme, bg_image=user.background_image)
+
 
 @app.route('/profile/<int:user_id>')
 def profile(user_id):
@@ -93,7 +100,9 @@ def profile(user_id):
         percent = "{:.2f}".format(correct * 100 / total)
     else:
         percent = "-"
-    return render_template('profile.html', user=user, theme=theme, total=total, correct=correct, percent=percent, bg_image=user.background_image)
+    return render_template('profile.html', user=user, theme=theme, total=total, correct=correct, percent=percent,
+                           bg_image=user.background_image)
+
 
 @app.route('/edit_profile/<int:user_id>', methods=['POST'])
 def edit_profile(user_id):
@@ -114,6 +123,7 @@ def edit_profile(user_id):
     db_sess.commit()
     return redirect(url_for('profile', user_id=user_id))
 
+
 @app.route('/change_password/<int:user_id>', methods=['POST'])
 def change_password(user_id):
     theme = get_theme()
@@ -132,6 +142,7 @@ def change_password(user_id):
     db_sess.commit()
     return redirect(url_for('profile', user_id=user_id))
 
+
 @app.route('/set_background/<int:user_id>', methods=['POST'])
 def set_background(user_id):
     db_sess = db_session.create_session()
@@ -140,7 +151,8 @@ def set_background(user_id):
         return redirect(url_for('login'))
     bg_type = request.form.get('bg_type')
     if bg_type == 'default':
-        if user.background_image and os.path.exists(user.background_image.replace('/static/user_bg/', USER_BG_FOLDER + '/')):
+        if user.background_image and os.path.exists(
+                user.background_image.replace('/static/user_bg/', USER_BG_FOLDER + '/')):
             old_path = user.background_image.replace('/static/user_bg/', USER_BG_FOLDER + '/')
             if os.path.exists(old_path):
                 os.remove(old_path)
@@ -155,6 +167,7 @@ def set_background(user_id):
             user.background_image = f"/static/user_bg/{filename}"
     db_sess.commit()
     return redirect(url_for('profile', user_id=user_id))
+
 
 @app.route('/rating')
 def rating():
@@ -182,6 +195,7 @@ def rating():
             }
     return render_template('rating.html', users=users_data, user=current_user_data, theme=theme)
 
+
 @app.route('/admin/users')
 def admin_users():
     theme = get_theme()
@@ -192,6 +206,7 @@ def admin_users():
         return redirect(url_for('login'))
     users = db_sess.query(User).all()
     return render_template('admin_users.html', users=users, theme=theme, user=admin)
+
 
 @app.route('/admin/user/<int:target_id>')
 def admin_user_detail(target_id):
@@ -205,6 +220,7 @@ def admin_user_detail(target_id):
     if not target_user:
         return redirect(url_for('admin_users'))
     return render_template('admin_user_detail.html', user=target_user, theme=theme, admin=admin)
+
 
 @app.route('/admin/user/<int:target_id>/edit', methods=['POST'])
 def admin_edit_user(target_id):
@@ -238,6 +254,7 @@ def admin_edit_user(target_id):
     db_sess.commit()
     return redirect(url_for('admin_user_detail', target_id=target_id))
 
+
 @app.route('/admin/user/<int:target_id>/delete')
 def admin_delete_user(target_id):
     user_id = request.cookies.get('user_id')
@@ -252,6 +269,7 @@ def admin_delete_user(target_id):
     db_sess.commit()
     return redirect(url_for('admin_users'))
 
+
 @app.route('/start_game/<int:user_id>')
 def start_game(user_id):
     theme = get_theme()
@@ -263,6 +281,7 @@ def start_game(user_id):
     session.pop('current_question', None)
     session['current_question'] = question_gen.generate_question()
     return redirect(url_for('game', user_id=user_id))
+
 
 @app.route('/game/<int:user_id>')
 def game(user_id):
@@ -278,7 +297,9 @@ def game(user_id):
     question = session['current_question']
     elapsed = int(time.time() - session['game_stats']['start_time'])
     total_questions = session['game_stats']['total_questions']
-    return render_template('game.html', user=user, theme=theme, question=question, stats=session['game_stats'], total_questions=total_questions, elapsed=elapsed, bg_image=user.background_image)
+    return render_template('game.html', user=user, theme=theme, question=question, stats=session['game_stats'],
+                           total_questions=total_questions, elapsed=elapsed, bg_image=user.background_image)
+
 
 @app.route('/check_answer/<int:user_id>', methods=['POST'])
 def check_answer(user_id):
@@ -306,7 +327,10 @@ def check_answer(user_id):
     session.pop('current_question', None)
     session['current_question'] = question_gen.generate_question()
     elapsed = int(time.time() - session['game_stats']['start_time'])
-    return render_template('game.html', user=user, theme=theme, question=session['current_question'], stats=session['game_stats'], total_questions=total_questions, elapsed=elapsed, message=message, message_type=message_type, bg_image=user.background_image)
+    return render_template('game.html', user=user, theme=theme, question=session['current_question'],
+                           stats=session['game_stats'], total_questions=total_questions, elapsed=elapsed,
+                           message=message, message_type=message_type, bg_image=user.background_image)
+
 
 @app.route('/skip_question/<int:user_id>', methods=['POST'])
 def skip_question(user_id):
@@ -323,7 +347,10 @@ def skip_question(user_id):
     session.pop('current_question', None)
     session['current_question'] = question_gen.generate_question()
     elapsed = int(time.time() - session['game_stats']['start_time'])
-    return render_template('game.html', user=user, theme=theme, question=session['current_question'], stats=session['game_stats'], total_questions=total_questions, elapsed=elapsed, message="Задание пропущено", message_type="warning", bg_image=user.background_image)
+    return render_template('game.html', user=user, theme=theme, question=session['current_question'],
+                           stats=session['game_stats'], total_questions=total_questions, elapsed=elapsed,
+                           message="Задание пропущено", message_type="warning", bg_image=user.background_image)
+
 
 @app.route('/end_game/<int:user_id>', methods=['POST'])
 def end_game(user_id):
@@ -338,13 +365,106 @@ def end_game(user_id):
     elapsed = int(time.time() - stats['start_time'])
     minutes = elapsed // 60
     seconds = elapsed % 60
-    return render_template('game_summary.html', user=user, stats=stats, total=total, elapsed=elapsed, minutes=minutes, seconds=seconds, theme=theme)
+    return render_template('game_summary.html', user=user, stats=stats, total=total, elapsed=elapsed, minutes=minutes,
+                           seconds=seconds, theme=theme)
+
 
 @app.route('/logout')
 def logout():
     resp = make_response(redirect(url_for('login')))
     resp.set_cookie('user_id', '', expires=0)
     return resp
+
+
+@app.route('/api/users', methods=['GET'])
+def api_users():
+    db_sess = db_session.create_session()
+    users = db_sess.query(User).all()
+    return jsonify([{
+        'id': u.id,
+        'username': u.username,
+        'email': u.email,
+        'total_tasks': u.total_tasks or 0,
+        'correct_tasks': u.correct_tasks or 0,
+        'percent': round((u.correct_tasks or 0) * 100 / (u.total_tasks or 1), 2) if u.total_tasks else 0
+    } for u in users])
+
+
+@app.route('/api/user/<int:user_id>', methods=['GET'])
+def api_user(user_id):
+    db_sess = db_session.create_session()
+    user = db_sess.get(User, user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    return jsonify({
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'total_tasks': user.total_tasks or 0,
+        'correct_tasks': user.correct_tasks or 0,
+        'percent': round((user.correct_tasks or 0) * 100 / (user.total_tasks or 1), 2) if user.total_tasks else 0
+    })
+
+
+@app.route('/api/rating/total', methods=['GET'])
+def api_rating_total():
+    db_sess = db_session.create_session()
+    users = db_sess.query(User).all()
+    sorted_users = sorted(users, key=lambda x: x.total_tasks or 0, reverse=True)
+    return jsonify([{
+        'rank': i + 1,
+        'id': u.id,
+        'username': u.username,
+        'total_tasks': u.total_tasks or 0,
+        'correct_tasks': u.correct_tasks or 0,
+        'percent': round((u.correct_tasks or 0) * 100 / (u.total_tasks or 1), 2) if u.total_tasks else 0
+    } for i, u in enumerate(sorted_users[:10])])
+
+
+@app.route('/api/rating/correct', methods=['GET'])
+def api_rating_correct():
+    db_sess = db_session.create_session()
+    users = db_sess.query(User).all()
+    sorted_users = sorted(users, key=lambda x: x.correct_tasks or 0, reverse=True)
+    return jsonify([{
+        'rank': i + 1,
+        'id': u.id,
+        'username': u.username,
+        'total_tasks': u.total_tasks or 0,
+        'correct_tasks': u.correct_tasks or 0,
+        'percent': round((u.correct_tasks or 0) * 100 / (u.total_tasks or 1), 2) if u.total_tasks else 0
+    } for i, u in enumerate(sorted_users[:10])])
+
+
+@app.route('/api/stats/<int:user_id>', methods=['GET'])
+def api_stats(user_id):
+    db_sess = db_session.create_session()
+    user = db_sess.get(User, user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    all_users = db_sess.query(User).all()
+    sorted_by_total = sorted(all_users, key=lambda x: x.total_tasks or 0, reverse=True)
+    sorted_by_correct = sorted(all_users, key=lambda x: x.correct_tasks or 0, reverse=True)
+
+    rank_total = next((i + 1 for i, u in enumerate(sorted_by_total) if u.id == user_id), None)
+    rank_correct = next((i + 1 for i, u in enumerate(sorted_by_correct) if u.id == user_id), None)
+
+    return jsonify({
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'total_tasks': user.total_tasks or 0,
+            'correct_tasks': user.correct_tasks or 0,
+            'percent': round((user.correct_tasks or 0) * 100 / (user.total_tasks or 1), 2) if user.total_tasks else 0
+        },
+        'rank': {
+            'by_total': rank_total,
+            'by_correct': rank_correct
+        },
+        'total_users': len(all_users)
+    })
+
 
 if __name__ == '__main__':
     os.makedirs("db", exist_ok=True)
