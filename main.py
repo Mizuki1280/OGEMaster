@@ -1,9 +1,9 @@
 import time
+import os
 from flask import Flask, render_template, request, redirect, url_for, make_response, session
 from data import db_session
 from data.users import User
 from data.questions import QuestionGenerator
-import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'itmaster_secret_key'
@@ -14,22 +14,18 @@ os.makedirs(USER_BG_FOLDER, exist_ok=True)
 
 question_gen = QuestionGenerator()
 
-
 @app.route('/set_theme/<theme>')
 def set_theme(theme):
     resp = make_response(redirect(request.referrer or '/'))
     resp.set_cookie('theme', theme, max_age=365 * 24 * 60 * 60)
     return resp
 
-
 def get_theme():
     return request.cookies.get('theme', 'dark')
-
 
 @app.route('/')
 def index():
     return redirect(url_for('login'))
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -46,7 +42,6 @@ def login():
         else:
             return render_template('login.html', error="Неверный логин или пароль", theme=theme)
     return render_template('login.html', theme=theme)
-
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -76,7 +71,6 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html', theme=theme)
 
-
 @app.route('/dashboard/<int:user_id>')
 def dashboard(user_id):
     theme = get_theme()
@@ -85,7 +79,6 @@ def dashboard(user_id):
     if not user:
         return redirect(url_for('login'))
     return render_template('dashboard.html', user=user, theme=theme, bg_image=user.background_image)
-
 
 @app.route('/profile/<int:user_id>')
 def profile(user_id):
@@ -100,9 +93,7 @@ def profile(user_id):
         percent = "{:.2f}".format(correct * 100 / total)
     else:
         percent = "-"
-    return render_template('profile.html', user=user, theme=theme, total=total, correct=correct, percent=percent,
-                           bg_image=user.background_image)
-
+    return render_template('profile.html', user=user, theme=theme, total=total, correct=correct, percent=percent, bg_image=user.background_image)
 
 @app.route('/edit_profile/<int:user_id>', methods=['POST'])
 def edit_profile(user_id):
@@ -123,7 +114,6 @@ def edit_profile(user_id):
     db_sess.commit()
     return redirect(url_for('profile', user_id=user_id))
 
-
 @app.route('/change_password/<int:user_id>', methods=['POST'])
 def change_password(user_id):
     theme = get_theme()
@@ -142,7 +132,6 @@ def change_password(user_id):
     db_sess.commit()
     return redirect(url_for('profile', user_id=user_id))
 
-
 @app.route('/set_background/<int:user_id>', methods=['POST'])
 def set_background(user_id):
     db_sess = db_session.create_session()
@@ -151,8 +140,10 @@ def set_background(user_id):
         return redirect(url_for('login'))
     bg_type = request.form.get('bg_type')
     if bg_type == 'default':
-        if user.background_image and os.path.exists(user.background_image):
-            os.remove(user.background_image)
+        if user.background_image and os.path.exists(user.background_image.replace('/static/user_bg/', USER_BG_FOLDER + '/')):
+            old_path = user.background_image.replace('/static/user_bg/', USER_BG_FOLDER + '/')
+            if os.path.exists(old_path):
+                os.remove(old_path)
         user.background_image = None
     elif bg_type == 'custom':
         file = request.files.get('background_image')
@@ -161,20 +152,16 @@ def set_background(user_id):
             filename = f"user_{user_id}.{ext}"
             filepath = os.path.join(USER_BG_FOLDER, filename)
             file.save(filepath)
-            filepath_normalized = filepath.replace('\\', '/')
-            user.background_image = f"/{filepath_normalized}"
+            user.background_image = f"/static/user_bg/{filename}"
     db_sess.commit()
     return redirect(url_for('profile', user_id=user_id))
-
 
 @app.route('/rating')
 def rating():
     theme = get_theme()
     user_id = request.cookies.get('user_id')
     db_sess = db_session.create_session()
-
     users = db_sess.query(User).all()
-
     users_data = []
     for user in users:
         users_data.append({
@@ -183,7 +170,6 @@ def rating():
             'total_tasks': user.total_tasks or 0,
             'correct_tasks': user.correct_tasks or 0
         })
-
     current_user_data = None
     if user_id:
         user = db_sess.get(User, int(user_id))
@@ -194,9 +180,77 @@ def rating():
                 'total_tasks': user.total_tasks or 0,
                 'correct_tasks': user.correct_tasks or 0
             }
-
     return render_template('rating.html', users=users_data, user=current_user_data, theme=theme)
 
+@app.route('/admin/users')
+def admin_users():
+    theme = get_theme()
+    user_id = request.cookies.get('user_id')
+    db_sess = db_session.create_session()
+    admin = db_sess.get(User, int(user_id)) if user_id else None
+    if not admin or admin.id != 1:
+        return redirect(url_for('login'))
+    users = db_sess.query(User).all()
+    return render_template('admin_users.html', users=users, theme=theme, user=admin)
+
+@app.route('/admin/user/<int:target_id>')
+def admin_user_detail(target_id):
+    theme = get_theme()
+    user_id = request.cookies.get('user_id')
+    db_sess = db_session.create_session()
+    admin = db_sess.get(User, int(user_id)) if user_id else None
+    if not admin or admin.id != 1:
+        return redirect(url_for('login'))
+    target_user = db_sess.get(User, target_id)
+    if not target_user:
+        return redirect(url_for('admin_users'))
+    return render_template('admin_user_detail.html', user=target_user, theme=theme, admin=admin)
+
+@app.route('/admin/user/<int:target_id>/edit', methods=['POST'])
+def admin_edit_user(target_id):
+    user_id = request.cookies.get('user_id')
+    db_sess = db_session.create_session()
+    admin = db_sess.get(User, int(user_id)) if user_id else None
+    if not admin or admin.id != 1:
+        return redirect(url_for('login'))
+    target_user = db_sess.get(User, target_id)
+    if not target_user:
+        return redirect(url_for('admin_users'))
+    target_user.username = request.form.get('username')
+    target_user.name = request.form.get('name') or None
+    target_user.surname = request.form.get('surname') or None
+    target_user.email = request.form.get('email') or None
+    target_user.age = request.form.get('age') or None
+    target_user.country = request.form.get('country') or None
+    target_user.city = request.form.get('city') or None
+    target_user.address = request.form.get('address') or None
+    target_user.position = request.form.get('position') or None
+    target_user.speciality = request.form.get('speciality') or None
+    new_password = request.form.get('password')
+    if new_password:
+        target_user.password = new_password
+    total_tasks = request.form.get('total_tasks')
+    if total_tasks:
+        target_user.total_tasks = int(total_tasks)
+    correct_tasks = request.form.get('correct_tasks')
+    if correct_tasks:
+        target_user.correct_tasks = int(correct_tasks)
+    db_sess.commit()
+    return redirect(url_for('admin_user_detail', target_id=target_id))
+
+@app.route('/admin/user/<int:target_id>/delete')
+def admin_delete_user(target_id):
+    user_id = request.cookies.get('user_id')
+    db_sess = db_session.create_session()
+    admin = db_sess.get(User, int(user_id)) if user_id else None
+    if not admin or admin.id != 1:
+        return redirect(url_for('login'))
+    target_user = db_sess.get(User, target_id)
+    if not target_user or target_user.id == 1:
+        return redirect(url_for('admin_users'))
+    db_sess.delete(target_user)
+    db_sess.commit()
+    return redirect(url_for('admin_users'))
 
 @app.route('/start_game/<int:user_id>')
 def start_game(user_id):
@@ -209,7 +263,6 @@ def start_game(user_id):
     session.pop('current_question', None)
     session['current_question'] = question_gen.generate_question()
     return redirect(url_for('game', user_id=user_id))
-
 
 @app.route('/game/<int:user_id>')
 def game(user_id):
@@ -225,9 +278,7 @@ def game(user_id):
     question = session['current_question']
     elapsed = int(time.time() - session['game_stats']['start_time'])
     total_questions = session['game_stats']['total_questions']
-    return render_template('game.html', user=user, theme=theme, question=question, stats=session['game_stats'],
-                           total_questions=total_questions, elapsed=elapsed, bg_image=user.background_image)
-
+    return render_template('game.html', user=user, theme=theme, question=question, stats=session['game_stats'], total_questions=total_questions, elapsed=elapsed, bg_image=user.background_image)
 
 @app.route('/check_answer/<int:user_id>', methods=['POST'])
 def check_answer(user_id):
@@ -255,10 +306,7 @@ def check_answer(user_id):
     session.pop('current_question', None)
     session['current_question'] = question_gen.generate_question()
     elapsed = int(time.time() - session['game_stats']['start_time'])
-    return render_template('game.html', user=user, theme=theme, question=session['current_question'],
-                           stats=session['game_stats'], total_questions=total_questions, elapsed=elapsed,
-                           message=message, message_type=message_type, bg_image=user.background_image)
-
+    return render_template('game.html', user=user, theme=theme, question=session['current_question'], stats=session['game_stats'], total_questions=total_questions, elapsed=elapsed, message=message, message_type=message_type, bg_image=user.background_image)
 
 @app.route('/skip_question/<int:user_id>', methods=['POST'])
 def skip_question(user_id):
@@ -275,10 +323,7 @@ def skip_question(user_id):
     session.pop('current_question', None)
     session['current_question'] = question_gen.generate_question()
     elapsed = int(time.time() - session['game_stats']['start_time'])
-    return render_template('game.html', user=user, theme=theme, question=session['current_question'],
-                           stats=session['game_stats'], total_questions=total_questions, elapsed=elapsed,
-                           message="Задание пропущено", message_type="warning", bg_image=user.background_image)
-
+    return render_template('game.html', user=user, theme=theme, question=session['current_question'], stats=session['game_stats'], total_questions=total_questions, elapsed=elapsed, message="Задание пропущено", message_type="warning", bg_image=user.background_image)
 
 @app.route('/end_game/<int:user_id>', methods=['POST'])
 def end_game(user_id):
@@ -293,16 +338,13 @@ def end_game(user_id):
     elapsed = int(time.time() - stats['start_time'])
     minutes = elapsed // 60
     seconds = elapsed % 60
-    return render_template('game_summary.html', user=user, stats=stats, total=total, elapsed=elapsed, minutes=minutes,
-                           seconds=seconds, theme=theme)
-
+    return render_template('game_summary.html', user=user, stats=stats, total=total, elapsed=elapsed, minutes=minutes, seconds=seconds, theme=theme)
 
 @app.route('/logout')
 def logout():
     resp = make_response(redirect(url_for('login')))
     resp.set_cookie('user_id', '', expires=0)
     return resp
-
 
 if __name__ == '__main__':
     os.makedirs("db", exist_ok=True)

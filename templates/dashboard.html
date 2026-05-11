@@ -2,12 +2,14 @@
 
 {% block content %}
 <div class="dashboard-full">
-    <div class="dashboard-header">
-        <h2 class="welcome-title">Добро пожаловать в OGEMaster!</h2>
-        <p class="welcome-user">{{ user.username }}</p>
-    </div>
-    <div class="dashboard-content">
-        <a href="/start_game/{{ user.id }}" class="btn-start">Начать</a>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h2 class="welcome-title">Добро пожаловать в ITMaster!</h2>
+            <p class="welcome-user">{{ user.username }}</p>
+        </div>
+        <div class="dashboard-content">
+            <a href="/start_game/{{ user.id }}" class="btn-start">Начать</a>
+        </div>
     </div>
 </div>
 {% endblock %}

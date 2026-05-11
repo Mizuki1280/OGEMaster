@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <title>ITMaster - Соревнование по ОГЭ</title>
+    <title>ITMaster</title>
 </head>
 <body class="{{ theme }}-theme {% if user %}logged-in{% endif %}">
     <div class="theme-switcher">
@@ -21,9 +21,12 @@
         <div class="nav-buttons">
             <a href="/profile/{{ user.id }}" class="nav-btn">Профиль</a>
             <a href="/rating" class="nav-btn">Рейтинг</a>
+            {% if user.id == 1 %}
+            <a href="/admin/users" class="nav-btn">Участники</a>
+            {% endif %}
         </div>
         <div class="nav-center">
-            <a href="/dashboard/{{ user.id }}" class="nav-btn-center">Главная</a>
+            <a href="/dashboard/{{ user.id }}" class="nav-btn-center">ITMaster</a>
         </div>
         <div class="right-controls">
             <div class="user-info">

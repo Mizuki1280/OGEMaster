@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="admin-users-full">
+    <div class="admin-users-container">
+        <div class="admin-header">
+            <h2 class="admin-title">Управление участниками</h2>
+            <p class="admin-subtitle">Всего пользователей: {{ users|length }}</p>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Поиск по ID или имени..." class="search-input">
+        </div>
+
+        <div class="users-table-wrapper">
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Никнейм</th>
+                        <th>Email</th>
+                        <th>Всего задач</th>
+                        <th>Правильных</th>
+                        <th>Процент</th>
+                        <th>Действие</th>
+                    </tr>
+                </thead>
+                <tbody id="usersBody">
+                    {% for u in users %}
+                    <tr class="user-row" data-id="{{ u.id }}" data-username="{{ u.username }}">
+                        <td class="id-cell">{{ u.id }}</td>
+                        <td class="username-cell">
+                            {{ u.username }}
+                            {% if u.id == 1 %}
+                                <span class="admin-badge">ADMIN</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ u.email or '—' }}</td>
+                        <td>{{ u.total_tasks or 0 }}</td>
+                        <td>{{ u.correct_tasks or 0 }}</td>
+                        <td>
+                            {% if u.total_tasks and u.total_tasks > 0 %}
+                                {{ "%.2f"|format(u.correct_tasks * 100 / u.total_tasks) }}%
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="/admin/user/{{ u.id }}" class="edit-btn">Редактировать</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const searchInput = document.getElementById('searchInput');
+    const rows = document.querySelectorAll('.user-row');
+
+    searchInput.addEventListener('input', function() {
+        const searchTerm = searchInput.value.toLowerCase();
+
+        rows.forEach(row => {
+            const id = row.dataset.id;
+            const username = row.dataset.username.toLowerCase();
+
+            if (id.includes(searchTerm) || username.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+</script>
+
+<style>
+.admin-users-full {
+    width: 90%;
+    margin: 0 auto;
+    min-height: 100vh;
+    padding: 110px 40px 40px 40px;
+}
+
+.admin-users-container {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    border-radius: 20px;
+    padding: 30px;
+}
+
+body.light-theme .admin-users-container {
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.admin-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.admin-title {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+body.dark-theme .admin-title {
+    color: #fff;
+}
+
+body.light-theme .admin-title {
+    color: #333;
+}
+
+.admin-subtitle {
+    font-size: 14px;
+}
+
+body.dark-theme .admin-subtitle {
+    color: #aaa;
+}
+
+body.light-theme .admin-subtitle {
+    color: #666;
+}
+
+.search-box {
+    margin-bottom: 20px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px 15px;
+    border-radius: 10px;
+    border: 1px solid;
+    font-size: 16px;
+}
+
+body.dark-theme .search-input {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #fff;
+}
+
+body.light-theme .search-input {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.2);
+    color: #333;
+}
+
+.users-table-wrapper {
+    overflow-x: auto;
+}
+
+.users-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.users-table th {
+    padding: 12px 10px;
+    text-align: left;
+    font-weight: bold;
+    border-bottom: 2px solid;
+}
+
+body.dark-theme .users-table th {
+    color: #fff;
+    border-bottom-color: #00a8ff;
+}
+
+body.light-theme .users-table th {
+    color: #333;
+    border-bottom-color: #0077ff;
+}
+
+.users-table td {
+    padding: 10px;
+    border-bottom: 1px solid;
+}
+
+body.dark-theme .users-table td {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+    color: #ddd;
+}
+
+body.light-theme .users-table td {
+    border-bottom-color: rgba(0, 0, 0, 0.1);
+    color: #555;
+}
+
+.id-cell {
+    font-weight: bold;
+    width: 60px;
+}
+
+.admin-badge {
+    background: #ff4444;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    margin-left: 8px;
+}
+
+.edit-btn {
+    padding: 6px 15px;
+    border-radius: 15px;
+    text-decoration: none;
+    font-size: 12px;
+    background: linear-gradient(135deg, #00a8ff, #0077ff);
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.edit-btn:hover {
+    opacity: 0.9;
+    text-decoration: none;
+    color: white;
+}
+</style>
+{% endblock %}

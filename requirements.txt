@@ -1,7 +1,8 @@
-flask==2.3.3
-flask-login==0.6.2
-flask-wtf==1.1.1
-wtforms==3.0.1
-sqlalchemy==2.0.21
-sqlalchemy-serializer==1.4.2
-pillow==10.0.1
+Flask==2.3.3
+Flask-Login==0.6.2
+Flask-SQLAlchemy==3.1.1
+SQLAlchemy==2.0.23
+sqlalchemy-serializer==1.4.1
+python-dotenv==1.0.0
+Jinja2==3.1.2
+Werkzeug==2.3.7
