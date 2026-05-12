@@ -9,7 +9,8 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'itmaster_secret_key'
 app.secret_key = 'itmaster_secret_key'
 
-USER_BG_FOLDER = 'static/user_bg'
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+USER_BG_FOLDER = os.path.join(BASE_DIR, 'static', 'user_bg')
 os.makedirs(USER_BG_FOLDER, exist_ok=True)
 
 question_gen = QuestionGenerator()
@@ -151,9 +152,8 @@ def set_background(user_id):
         return redirect(url_for('login'))
     bg_type = request.form.get('bg_type')
     if bg_type == 'default':
-        if user.background_image and os.path.exists(
-                user.background_image.replace('/static/user_bg/', USER_BG_FOLDER + '/')):
-            old_path = user.background_image.replace('/static/user_bg/', USER_BG_FOLDER + '/')
+        if user.background_image:
+            old_path = os.path.join(BASE_DIR, user.background_image.lstrip('/'))
             if os.path.exists(old_path):
                 os.remove(old_path)
         user.background_image = None
@@ -385,8 +385,7 @@ def api_users():
         'username': u.username,
         'email': u.email,
         'total_tasks': u.total_tasks or 0,
-        'correct_tasks': u.correct_tasks or 0,
-        'percent': round((u.correct_tasks or 0) * 100 / (u.total_tasks or 1), 2) if u.total_tasks else 0
+        'correct_tasks': u.correct_tasks or 0
     } for u in users])
 
 
@@ -401,8 +400,7 @@ def api_user(user_id):
         'username': user.username,
         'email': user.email,
         'total_tasks': user.total_tasks or 0,
-        'correct_tasks': user.correct_tasks or 0,
-        'percent': round((user.correct_tasks or 0) * 100 / (user.total_tasks or 1), 2) if user.total_tasks else 0
+        'correct_tasks': user.correct_tasks or 0
     })
 
 
@@ -416,8 +414,7 @@ def api_rating_total():
         'id': u.id,
         'username': u.username,
         'total_tasks': u.total_tasks or 0,
-        'correct_tasks': u.correct_tasks or 0,
-        'percent': round((u.correct_tasks or 0) * 100 / (u.total_tasks or 1), 2) if u.total_tasks else 0
+        'correct_tasks': u.correct_tasks or 0
     } for i, u in enumerate(sorted_users[:10])])
 
 
@@ -431,39 +428,8 @@ def api_rating_correct():
         'id': u.id,
         'username': u.username,
         'total_tasks': u.total_tasks or 0,
-        'correct_tasks': u.correct_tasks or 0,
-        'percent': round((u.correct_tasks or 0) * 100 / (u.total_tasks or 1), 2) if u.total_tasks else 0
+        'correct_tasks': u.correct_tasks or 0
     } for i, u in enumerate(sorted_users[:10])])
-
-
-@app.route('/api/stats/<int:user_id>', methods=['GET'])
-def api_stats(user_id):
-    db_sess = db_session.create_session()
-    user = db_sess.get(User, user_id)
-    if not user:
-        return jsonify({'error': 'User not found'}), 404
-
-    all_users = db_sess.query(User).all()
-    sorted_by_total = sorted(all_users, key=lambda x: x.total_tasks or 0, reverse=True)
-    sorted_by_correct = sorted(all_users, key=lambda x: x.correct_tasks or 0, reverse=True)
-
-    rank_total = next((i + 1 for i, u in enumerate(sorted_by_total) if u.id == user_id), None)
-    rank_correct = next((i + 1 for i, u in enumerate(sorted_by_correct) if u.id == user_id), None)
-
-    return jsonify({
-        'user': {
-            'id': user.id,
-            'username': user.username,
-            'total_tasks': user.total_tasks or 0,
-            'correct_tasks': user.correct_tasks or 0,
-            'percent': round((user.correct_tasks or 0) * 100 / (user.total_tasks or 1), 2) if user.total_tasks else 0
-        },
-        'rank': {
-            'by_total': rank_total,
-            'by_correct': rank_correct
-        },
-        'total_users': len(all_users)
-    })
 
 
 if __name__ == '__main__':

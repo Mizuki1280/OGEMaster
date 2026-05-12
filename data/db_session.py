@@ -1,9 +1,10 @@
+import os
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
 from sqlalchemy.orm import Session
-import os
+import sqlalchemy.ext.declarative as dec
 
-SqlAlchemyBase = orm.declarative_base()
+SqlAlchemyBase = dec.declarative_base()
 
 __factory = None
 
@@ -17,11 +18,14 @@ def global_init(db_file):
     if not db_file or not db_file.strip():
         raise Exception("Необходимо указать файл базы данных.")
 
-    db_dir = os.path.dirname(db_file)
-    if db_dir and not os.path.exists(db_dir):
-        os.makedirs(db_dir, exist_ok=True)
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    db_path = os.path.join(base_dir, db_file)
 
-    conn_str = f'sqlite:///{db_file.strip()}?check_same_thread=False'
+    db_dir = os.path.dirname(db_path)
+    if not os.path.exists(db_dir):
+        os.makedirs(db_dir)
+
+    conn_str = f'sqlite:///{db_path}?check_same_thread=False'
     print(f"Подключение к базе данных по адресу {conn_str}")
 
     engine = sa.create_engine(conn_str, echo=False)

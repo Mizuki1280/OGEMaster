@@ -32,7 +32,7 @@
         "type": "calc",
         "text": "Найдите наибольшее целое число x, для которого истинно высказывание: НЕ (X чётное) И НЕ (X >= {limit}).",
         "params": {"limit": [6, 20]},
-        "formula": "lambda limit: limit - 2 if limit % 2 == 0 else limit - 1"
+        "formula": "lambda limit: limit - 2 if limit % 2 == 1 else limit - 1"
     },
     {
         "id": 5,
@@ -583,8 +583,8 @@
       {
           "id": 84,
           "type": "text",
-          "text": "Найдите наибольшее целое число x, для которого истинно: НЕ (x > 0) И (x < 5)",
-          "answer": "0"
+          "text": "Найдите наибольшее целое число x, для которого истинно: НЕ (x > 4) И (x < 5)",
+          "answer": "4"
       },
       {
           "id": 85,

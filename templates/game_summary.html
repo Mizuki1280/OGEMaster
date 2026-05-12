@@ -1,29 +1,94 @@
 {% extends "base.html" %}
+
 {% block content %}
 <div class="dashboard-full">
-    <div class="game-container" style="text-align:center;">
-        <h2>Игра завершена</h2>
-        <div class="summary-stats" style="margin:30px 0;font-size:18px;color:#fff;">
-            <p>Решено задач: {{ stats.solved }}</p>
-            <p>Пропущено задач: {{ stats.skipped }}</p>
-            <p>Не решено задач: {{ stats.unsolved }}</p>
-            <p>Всего заданий: {{ total }}</p>
-            <p>Процент правильных:
-                {% if total > 0 %}
-                    {{ "%.2f"|format(stats.solved * 100 / total) }}%
-                {% else %}
-                    0%
-                {% endif %}
-            </p>
-            <p>Время: {{ minutes }} мин {{ seconds }} сек</p>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h2 class="welcome-title">Забег окончен</h2>
         </div>
-        <a href="/dashboard/{{ user.id }}" class="btn-submit">Вернуться на главную</a>
+        <div class="summary-stats">
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.solved }}</div>
+                <div class="stat-label">Решено задач</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.skipped }}</div>
+                <div class="stat-label">Пропущено задач</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.unsolved }}</div>
+                <div class="stat-label">Не решено задач</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ total }}</div>
+                <div class="stat-label">Всего заданий</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">
+                    {% if total > 0 %}
+                        {{ "%.2f"|format(stats.solved * 100 / total) }}%
+                    {% else %}
+                        0%
+                    {% endif %}
+                </div>
+                <div class="stat-label">Процент правильных</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ minutes }}:{{ "%02d"|format(seconds) }}</div>
+                <div class="stat-label">Время</div>
+            </div>
+        </div>
+        <div class="dashboard-content">
+            <a href="/dashboard/{{ user.id }}" class="btn-start">На главную</a>
+        </div>
     </div>
 </div>
+
 <style>
-.summary-stats p{margin:10px 0;}
-.btn-submit{background:linear-gradient(135deg,#00a8ff,#0077ff);color:white;padding:12px 30px;border-radius:25px;text-decoration:none;display:inline-block;}
-body.dark-theme .summary-stats{color:#fff;}
-body.light-theme .summary-stats{color:#333;}
+.summary-stats {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 40px;
+}
+
+.stat-card {
+    width: 150px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    text-align: center;
+}
+
+body.light-theme .stat-card {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+body.dark-theme .stat-value {
+    color: #00a8ff;
+}
+
+body.light-theme .stat-value {
+    color: #0077ff;
+}
+
+.stat-label {
+    font-size: 12px;
+}
+
+body.dark-theme .stat-label {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+body.light-theme .stat-label {
+    color: rgba(0, 0, 0, 0.6);
+}
 </style>
 {% endblock %}
